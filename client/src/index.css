@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --color-forest-50: #f0f6ec;
+  --color-forest-100: #e4f1e3;
+  --color-forest-200: #dce9d6;
+  --color-forest-600: #41784a;
+  --color-forest-700: #315d38;
+  --color-forest-800: #24492b;
+  --color-ink: #20251f;
+  --color-ink-soft: #586252;
+  --color-ink-muted: #7a8277;
+  --color-mist: #f4f6f2;
+  --color-line: #e6eae2;
+  --color-wa: #25d366;
+  --color-wa-dark: #075e54;
+  --color-wa-bubble: #dcf8c6;
+}
+
+body {
+  @apply bg-mist text-ink font-sans antialiased;
+}
