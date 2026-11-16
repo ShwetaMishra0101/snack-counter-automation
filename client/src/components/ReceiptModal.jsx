@@ -1,13 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // In-app receipt preview: images and PDFs render inline in an overlay
 // instead of downloading.
 export default function ReceiptModal({ url, onClose }) {
+  const [failed, setFailed] = useState(false);
+
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // A new receipt means a fresh attempt at loading it.
+  useEffect(() => { setFailed(false); }, [url]);
 
   if (!url) return null;
   const isPdf = url.toLowerCase().endsWith('.pdf');
@@ -42,10 +47,20 @@ export default function ReceiptModal({ url, onClose }) {
           </div>
         </div>
         <div className="flex-1 overflow-auto bg-mist p-3">
-          {isPdf ? (
+          {failed ? (
+            <p className="py-10 text-center text-sm text-ink-muted">
+              This receipt file isn't available on this server — it was uploaded in an older
+              session. New receipts are stored durably and will preview here.
+            </p>
+          ) : isPdf ? (
             <iframe src={url} title="Receipt" className="h-[70vh] w-full rounded-lg bg-white" />
           ) : (
-            <img src={url} alt="Receipt" className="mx-auto max-h-[70vh] rounded-lg object-contain" />
+            <img
+              src={url}
+              alt="Receipt"
+              onError={() => setFailed(true)}
+              className="mx-auto max-h-[70vh] rounded-lg object-contain"
+            />
           )}
         </div>
       </div>

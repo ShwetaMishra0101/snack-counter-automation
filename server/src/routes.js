@@ -1,23 +1,14 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'node:path';
-import fs from 'node:fs';
 import bcrypt from 'bcryptjs';
-import { Employee, Office, Refill, Notification } from './models/index.js';
+import { Employee, Office, Refill, Notification, Receipt } from './models/index.js';
 import { hrOnly, adminOnly, passwordIssue, isValidPhone, cleanPhone } from './auth.js';
 
 export function buildRouter(service) {
   const router = express.Router();
-  const uploadDir = path.resolve('uploads');
-  fs.mkdirSync(uploadDir, { recursive: true });
-  // Keep the original extension so the browser previews receipts inline
-  // (extensionless files are served as binary and download instead).
-  const storage = multer.diskStorage({
-    destination: uploadDir,
-    filename: (_req, file, cb) =>
-      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname).toLowerCase()}`)
-  });
-  const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
+
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
     cb(null, ['image/jpeg','image/png','image/webp','application/pdf'].includes(file.mimetype));
   }});
 
@@ -133,7 +124,14 @@ export function buildRouter(service) {
   router.post('/refills/:id/purchase', upload.single('receipt'), async (req, res, next) => {
     try {
       if (!req.file) throw new Error('Receipt file is required');
-      const receiptUrl = `/uploads/${req.file.filename}`;
+      const receipt = await Receipt.create({
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+        filename: req.file.originalname || 'receipt',
+        uploadedBy: req.user.id
+      });
+      // The extension in the URL lets the browser preview instead of download.
+      const receiptUrl = `/api/receipts/${receipt._id}${path.extname(req.file.originalname || '').toLowerCase()}`;
       res.json(await service.submitPurchase(req.params.id, req.user.id, {
         amount: req.body.amount, description: req.body.description, receiptUrl,
         payrollCurrency: req.body.payrollCurrency
